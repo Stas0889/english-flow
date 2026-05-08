@@ -15,6 +15,8 @@ import {
   WEBFLOW_INTERFACE_LEFTS,
   WEBFLOW_INTERFACE_RIGHTS,
 } from "./wordBank.js";
+import CUSTOM_MNEMONICS, { CUSTOM_MNEMONIC_DETAILS } from "./mnemonics.js";
+import CUSTOM_WORD_OVERRIDES from "./wordOverrides.js";
 
 const rawWords = [
   {
@@ -1091,7 +1093,18 @@ const getReferenceLabels = (word, category) => {
     : CATEGORY_REFERENCE_LABELS.word;
 };
 
+const getCustomMnemonic = (word) => CUSTOM_MNEMONICS[normalizeWordKey(word)];
+const getCustomMnemonicDetails = (word) =>
+  CUSTOM_MNEMONIC_DETAILS[normalizeWordKey(word)];
+const getCustomWordOverride = (word) =>
+  CUSTOM_WORD_OVERRIDES[normalizeWordKey(word)];
+
 const buildMnemonic = (word, translation, category, index) => {
+  const customMnemonic = getCustomMnemonic(word);
+  if (customMnemonic) {
+    return customMnemonic;
+  }
+
   const templates = MNEMONIC_BUILDERS[category] ?? MNEMONIC_BUILDERS["Basic A1"];
   return chooseTemplate(templates, index)(word, translation);
 };
@@ -1248,15 +1261,26 @@ const seenWords = new Set();
   uniqueWords.push(item);
 });
 
-export const WORDS_DATA = uniqueWords.map((item, index) => ({
-  audioText: item.audioText ?? item.word,
-  difficulty: item.difficulty ?? "easy",
-  reviewStage: item.reviewStage ?? 0,
-  nextReviewDate: item.nextReviewDate ?? null,
-  errorCount: item.errorCount ?? 0,
-  status: item.status ?? "new",
-  createdAt: item.createdAt ?? createGeneratedCreatedAt(index),
-  ...item,
-}));
+export const WORDS_DATA = uniqueWords.map((item, index) => {
+  const wordOverride = getCustomWordOverride(item.word) ?? {};
+
+  return {
+    ...item,
+    ...wordOverride,
+    audioText: item.audioText ?? item.word,
+    difficulty: item.difficulty ?? "easy",
+    reviewStage: item.reviewStage ?? 0,
+    nextReviewDate: item.nextReviewDate ?? null,
+    errorCount: item.errorCount ?? 0,
+    status: item.status ?? "new",
+    createdAt: item.createdAt ?? createGeneratedCreatedAt(index),
+    mnemonic: getCustomMnemonic(item.word) ?? item.mnemonic,
+    mnemonicDetails:
+      getCustomMnemonicDetails(item.word) ??
+      getCustomMnemonic(item.word) ??
+      item.mnemonicDetails ??
+      item.mnemonic,
+  };
+});
 
 export default WORDS_DATA;

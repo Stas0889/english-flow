@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import EmptyState from "../components/EmptyState";
 import ReviewCard from "../components/ReviewCard";
+import StudyDirectionSwitch from "../components/StudyDirectionSwitch";
 import { capitalizeWord } from "../utils/text";
 
 const Review = () => {
   const { dueWords, handleWordAction, settings } = useOutletContext();
+  const [studyDirection, setStudyDirection] = useState("en-ru");
+  const isReverseMode = studyDirection === "ru-en";
 
   if (!dueWords.length) {
     return (
@@ -37,12 +41,19 @@ const Review = () => {
         </div>
       </div>
 
+      <StudyDirectionSwitch
+        value={studyDirection}
+        onChange={setStudyDirection}
+        description="В повторении RU → EN помогает тренировать активную речь, а не только узнавание."
+      />
+
       <div className="review-layout">
         <ReviewCard
           key={currentWord.id}
           word={currentWord}
           accent={settings.voiceAccent}
           onAction={handleWordAction}
+          studyDirection={studyDirection}
         />
 
         <aside className="side-panel">
@@ -57,7 +68,11 @@ const Review = () => {
             <div className="session-metrics">
               <div className="session-metric">
                 <span>Текущее слово</span>
-                <strong>{capitalizeWord(currentWord.word)}</strong>
+                <strong>
+                  {isReverseMode
+                    ? currentWord.translation
+                    : capitalizeWord(currentWord.word)}
+                </strong>
               </div>
               <div className="session-metric">
                 <span>Ошибок</span>
@@ -74,9 +89,13 @@ const Review = () => {
                   <div className="mini-word-main">
                     <span className="mini-word-rank">{index + 1}</span>
                     <div>
-                      <strong>{capitalizeWord(word.word)}</strong>
+                      <strong>
+                        {isReverseMode ? word.translation : capitalizeWord(word.word)}
+                      </strong>
                       <p className="muted">
-                        {word.translation} · ошибок: {word.errorCount || 0}
+                        {isReverseMode
+                          ? `${word.category} · ошибок: ${word.errorCount || 0}`
+                          : `${word.translation} · ошибок: ${word.errorCount || 0}`}
                       </p>
                     </div>
                   </div>

@@ -54,23 +54,56 @@ const getTranslationDistractors = (words, targetWord) => {
   return uniqueByTranslation.slice(0, 3);
 };
 
-export const buildWordQuizQuestion = (words, index = 0) => {
+const getWordDistractors = (words, targetWord) => {
+  const sameCategory = words.filter(
+    (word) =>
+      word.id !== targetWord.id &&
+      word.category === targetWord.category &&
+      word.word !== targetWord.word,
+  );
+  const fallback = words.filter(
+    (word) => word.id !== targetWord.id && word.word !== targetWord.word,
+  );
+  const uniqueByWord = [];
+  const seenWords = new Set();
+
+  [...sameCategory, ...fallback].forEach((word) => {
+    const wordKey = normalizeWhitespace(word.word).toLowerCase();
+    if (!wordKey || seenWords.has(wordKey)) {
+      return;
+    }
+
+    seenWords.add(wordKey);
+    uniqueByWord.push(word);
+  });
+
+  return uniqueByWord.slice(0, 3);
+};
+
+export const buildWordQuizQuestion = (words, index = 0, direction = "en-ru") => {
   if (!Array.isArray(words) || !words.length) {
     return null;
   }
 
   const targetWord = words[index % words.length];
-  const distractors = getTranslationDistractors(words, targetWord);
+  const isReverseMode = direction === "ru-en";
+  const distractors = isReverseMode
+    ? getWordDistractors(words, targetWord)
+    : getTranslationDistractors(words, targetWord);
+  const correctAnswer = isReverseMode ? targetWord.word : targetWord.translation;
   const options = shuffleItems([
-    targetWord.translation,
-    ...distractors.map((word) => word.translation),
+    correctAnswer,
+    ...distractors.map((word) =>
+      isReverseMode ? word.word : word.translation,
+    ),
   ]);
 
   return {
-    id: `${targetWord.id}-quiz-${index}`,
+    id: `${targetWord.id}-quiz-${direction}-${index}`,
+    direction,
     targetWord,
     options,
-    correctAnswer: targetWord.translation,
+    correctAnswer,
   };
 };
 

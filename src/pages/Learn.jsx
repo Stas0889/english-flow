@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import EmptyState from "../components/EmptyState";
+import StudyDirectionSwitch from "../components/StudyDirectionSwitch";
 import WordCard from "../components/WordCard";
 
 const Learn = () => {
   const { dailyState, handleWordAction, settings, todayNewWords } = useOutletContext();
+  const [studyDirection, setStudyDirection] = useState("en-ru");
   const assignedCount = dailyState.assignedNewWordIds?.length || todayNewWords.length;
   const completedCount = Math.max(0, assignedCount - todayNewWords.length);
   const progressPercent = assignedCount
@@ -51,6 +54,11 @@ const Learn = () => {
         </div>
       </div>
 
+      <StudyDirectionSwitch
+        value={studyDirection}
+        onChange={setStudyDirection}
+      />
+
       <div className="learn-layout">
         <div className="word-list learn-word-list">
           {todayNewWords.map((word) => (
@@ -59,6 +67,7 @@ const Learn = () => {
               word={word}
               accent={settings.voiceAccent}
               onAction={handleWordAction}
+              studyDirection={studyDirection}
             />
           ))}
         </div>
@@ -111,7 +120,7 @@ const Learn = () => {
               <div className="legend-list">
                 <div className="legend-item">
                   <span className="legend-dot legend-dot-success" />
-                  <span>«Знаю» двигает слово дальше по интервальному повторению.</span>
+                  <span>«Знаю» отправляет слово в обычное интервальное повторение.</span>
                 </div>
                 <div className="legend-item">
                   <span className="legend-dot legend-dot-warning" />
@@ -120,6 +129,10 @@ const Learn = () => {
                 <div className="legend-item">
                   <span className="legend-dot legend-dot-danger" />
                   <span>«Не помню» возвращает слово на раннюю стадию.</span>
+                </div>
+                <div className="legend-item">
+                  <span className="legend-dot legend-dot-neutral" />
+                  <span>«Запомнил» убирает слово из новых и из будущих повторений.</span>
                 </div>
               </div>
             </div>

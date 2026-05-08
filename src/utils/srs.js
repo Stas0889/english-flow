@@ -26,6 +26,16 @@ export const applySrsAction = (
   };
 
   switch (actionType) {
+    case "mastered":
+      return {
+        updatedWord: {
+          ...safeWord,
+          reviewStage: LAST_REVIEW_STAGE + 1,
+          nextReviewDate: null,
+          status: "learned",
+        },
+        completedReviewsDelta: 1,
+      };
     case "know": {
       const nextStage = safeWord.reviewStage + 1;
 

@@ -1,10 +1,9 @@
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Route, Routes } from "react-router-dom";
 import AppLayout from "./components/AppLayout";
 import COURSE_LESSONS from "./data/courseLessons";
 import GRAMMAR_LESSONS from "./data/grammarLessons";
 import PHRASES_DATA from "./data/phrases";
-import WORDS_DATA from "./data/words";
 import useLocalStorage from "./hooks/useLocalStorage";
 import Course from "./pages/Course";
 import Dashboard from "./pages/Dashboard";
@@ -27,6 +26,11 @@ import {
 } from "./utils/learningInsights";
 import { getDueWords, getProgressSummary } from "./utils/progress";
 import { applySrsAction } from "./utils/srs";
+import {
+  createWordsProgressSnapshot,
+  mergeWordsWithDefaults,
+  normalizeStoredWordsProgress,
+} from "./utils/wordProgress";
 import { getRecommendedNewWords, sortWordsForLearning } from "./utils/wordSelection";
 
 const STORAGE_KEYS = {
@@ -56,24 +60,6 @@ const createInitialDailyState = (today) => ({
   activityLog: [],
   newWordAssignmentVersion: NEW_WORD_ASSIGNMENT_VERSION,
 });
-
-const mergeWordsWithDefaults = (storedWords) => {
-  const safeWords = Array.isArray(storedWords) ? storedWords : [];
-  const wordsMap = new Map(safeWords.map((word) => [word.id, word]));
-
-  return WORDS_DATA.map((word) => {
-    const storedWord = wordsMap.get(word.id) ?? {};
-
-    return {
-      ...word,
-      reviewStage: Number(storedWord.reviewStage ?? word.reviewStage) || 0,
-      nextReviewDate: storedWord.nextReviewDate ?? word.nextReviewDate ?? null,
-      errorCount: Number(storedWord.errorCount ?? word.errorCount) || 0,
-      status: storedWord.status ?? word.status,
-      createdAt: storedWord.createdAt ?? word.createdAt,
-    };
-  });
-};
 
 const normalizeDailyState = ({ dailyState, settings, today, words }) => {
   const baseState = {
@@ -150,9 +136,9 @@ function App() {
     STORAGE_KEYS.settings,
     DEFAULT_SETTINGS,
   );
-  const [wordsProgress, setWordsProgress] = useLocalStorage(
+  const [storedWordsProgress, setStoredWordsProgress] = useLocalStorage(
     STORAGE_KEYS.wordsProgress,
-    WORDS_DATA,
+    {},
   );
   const [dailyState, setDailyState] = useLocalStorage(
     STORAGE_KEYS.dailyState,
@@ -167,16 +153,41 @@ function App() {
     {},
   );
 
+  const wordsProgress = useMemo(
+    () => mergeWordsWithDefaults(storedWordsProgress),
+    [storedWordsProgress],
+  );
+
+  const setWordsProgress = useCallback(
+    (nextWordsOrUpdater) => {
+      setStoredWordsProgress((currentStoredProgress) => {
+        const currentWords = mergeWordsWithDefaults(currentStoredProgress);
+        const nextWords =
+          typeof nextWordsOrUpdater === "function"
+            ? nextWordsOrUpdater(currentWords)
+            : nextWordsOrUpdater;
+
+        return createWordsProgressSnapshot(nextWords);
+      });
+    },
+    [setStoredWordsProgress],
+  );
+
   useEffect(() => {
     setSettings((current) => ({ ...DEFAULT_SETTINGS, ...(current ?? {}) }));
-    setWordsProgress((current) => mergeWordsWithDefaults(current));
+    setStoredWordsProgress((current) => normalizeStoredWordsProgress(current));
     setGrammarProgress((current) =>
       current && typeof current === "object" ? current : {},
     );
     setCourseProgress((current) =>
       current && typeof current === "object" ? current : {},
     );
-  }, [setCourseProgress, setGrammarProgress, setSettings, setWordsProgress]);
+  }, [
+    setCourseProgress,
+    setGrammarProgress,
+    setSettings,
+    setStoredWordsProgress,
+  ]);
 
   const normalizedSettings = useMemo(
     () => ({ ...DEFAULT_SETTINGS, ...(settings ?? {}) }),
@@ -297,17 +308,17 @@ function App() {
       today,
     );
     const isNewWord = targetWord.status === "new";
-    const activityPatch = {
-      totalActions: 1,
-      reviewActions: isNewWord ? 0 : 1,
-      newWordActions: isNewWord ? 1 : 0,
-      knownActions: actionType === "know" ? 1 : 0,
-      hardActions: actionType === "hard" ? 1 : 0,
-      forgotActions: actionType === "forgot" ? 1 : 0,
-      postponedActions: actionType === "postpone" ? 1 : 0,
-      learnedActions:
-        updatedWord.status === "learned" && targetWord.status !== "learned" ? 1 : 0,
-    };
+      const activityPatch = {
+        totalActions: 1,
+        reviewActions: isNewWord ? 0 : 1,
+        newWordActions: isNewWord ? 1 : 0,
+        knownActions: actionType === "know" || actionType === "mastered" ? 1 : 0,
+        hardActions: actionType === "hard" ? 1 : 0,
+        forgotActions: actionType === "forgot" ? 1 : 0,
+        postponedActions: actionType === "postpone" ? 1 : 0,
+        learnedActions:
+          updatedWord.status === "learned" && targetWord.status !== "learned" ? 1 : 0,
+      };
 
     setWordsProgress((currentWords) =>
       currentWords.map((word) => (word.id === wordId ? updatedWord : word)),
@@ -402,14 +413,14 @@ function App() {
   };
 
   const resetProgress = () => {
-    setWordsProgress(mergeWordsWithDefaults([]));
+    setStoredWordsProgress({});
     setDailyState(createInitialDailyState(today));
     setGrammarProgress({});
     setCourseProgress({});
   };
 
   const exportAppData = () => ({
-    [STORAGE_KEYS.wordsProgress]: wordsProgress,
+    [STORAGE_KEYS.wordsProgress]: normalizeStoredWordsProgress(storedWordsProgress),
     [STORAGE_KEYS.settings]: normalizedSettings,
     [STORAGE_KEYS.dailyState]: normalizedDailyState,
     [STORAGE_KEYS.grammarProgress]: grammarProgress,
@@ -425,9 +436,10 @@ function App() {
       ...DEFAULT_SETTINGS,
       ...(payload[STORAGE_KEYS.settings] ?? normalizedSettings),
     };
-    const nextWords = mergeWordsWithDefaults(
-      payload[STORAGE_KEYS.wordsProgress] ?? wordsProgress,
+    const nextStoredWordsProgress = normalizeStoredWordsProgress(
+      payload[STORAGE_KEYS.wordsProgress] ?? storedWordsProgress,
     );
+    const nextWords = mergeWordsWithDefaults(nextStoredWordsProgress);
     const nextDailyState = normalizeDailyState({
       dailyState: payload[STORAGE_KEYS.dailyState] ?? normalizedDailyState,
       settings: nextSettings,
@@ -446,7 +458,7 @@ function App() {
         : {};
 
     setSettings(nextSettings);
-    setWordsProgress(nextWords);
+    setStoredWordsProgress(nextStoredWordsProgress);
     setDailyState(nextDailyState);
     setGrammarProgress(nextGrammarProgress);
     setCourseProgress(nextCourseProgress);

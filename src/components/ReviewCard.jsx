@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
 import AudioButton from "./AudioButton";
+import MnemonicPanel from "./MnemonicPanel";
 import { capitalizeWord } from "../utils/text";
 
-const ReviewCard = ({ word, accent, onAction }) => {
+const ReviewCard = ({ word, accent, onAction, studyDirection = "en-ru" }) => {
   const [isRevealed, setIsRevealed] = useState(false);
+  const isReverseMode = studyDirection === "ru-en";
+  const promptText = isReverseMode ? word.translation : capitalizeWord(word.word);
+  const answerLabel = isReverseMode ? "Английское слово:" : "Перевод:";
+  const answerText = isReverseMode ? capitalizeWord(word.word) : word.translation;
+  const promptHint = isReverseMode
+    ? "Сначала попробуй вспомнить английское слово, потом открой ответ."
+    : "Сначала попробуй сам вспомнить перевод, пример и ассоциацию.";
 
   useEffect(() => {
     setIsRevealed(false);
-  }, [word.id]);
+  }, [word.id, studyDirection]);
 
   return (
     <article className="card review-card">
@@ -17,9 +25,11 @@ const ReviewCard = ({ word, accent, onAction }) => {
             <span className="chip chip-accent">Повторение</span>
             <span className="chip">{word.category}</span>
           </div>
-          <h2 className="word-title">{capitalizeWord(word.word)}</h2>
+          <h2 className="word-title">{promptText}</h2>
         </div>
-        <AudioButton text={word.audioText || word.word} accent={accent} />
+        {!isReverseMode || isRevealed ? (
+          <AudioButton text={word.audioText || word.word} accent={accent} />
+        ) : null}
       </div>
 
       {!isRevealed ? (
@@ -27,9 +37,7 @@ const ReviewCard = ({ word, accent, onAction }) => {
           <span className="review-image" aria-hidden="true">
             {word.image}
           </span>
-          <p className="muted review-prompt-text">
-            Сначала попробуй сам вспомнить перевод, пример и ассоциацию.
-          </p>
+          <p className="muted review-prompt-text">{promptHint}</p>
           <button
             type="button"
             className="button"
@@ -42,8 +50,8 @@ const ReviewCard = ({ word, accent, onAction }) => {
         <>
           <div className="review-answer-grid">
             <div className="detail-block mnemonic-block">
-              <strong>Перевод:</strong>
-              <p className="word-translation">{word.translation}</p>
+              <strong>{answerLabel}</strong>
+              <p className="word-translation">{answerText}</p>
               <p className="transcription-text">{word.transcription}</p>
             </div>
 
@@ -59,10 +67,7 @@ const ReviewCard = ({ word, accent, onAction }) => {
               <p className="muted">{word.workExampleTranslation}</p>
             </div>
 
-            <div className="detail-block mnemonic-block">
-              <strong>Мнемотехника:</strong>
-              <p>{word.mnemonic}</p>
-            </div>
+            <MnemonicPanel word={word} />
           </div>
 
           <div className="word-actions">

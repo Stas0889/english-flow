@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useOutletContext } from "react-router-dom";
 import AudioButton from "../components/AudioButton";
 import EmptyState from "../components/EmptyState";
+import StudyDirectionSwitch from "../components/StudyDirectionSwitch";
 import PHRASES_DATA from "../data/phrases";
 import PRACTICE_SCENARIOS from "../data/practiceScenarios";
 import {
@@ -57,6 +58,7 @@ const Practice = () => {
     wordsProgress,
   } = useOutletContext();
   const [activeMode, setActiveMode] = useState("wordQuiz");
+  const [wordQuizDirection, setWordQuizDirection] = useState("en-ru");
   const [modeStats, setModeStats] = useState(initialModeStats);
   const [modeIndexes, setModeIndexes] = useState({
     wordQuiz: 0,
@@ -110,8 +112,13 @@ const Practice = () => {
   }, [settings.activeCategories]);
 
   const wordQuizQuestion = useMemo(
-    () => buildWordQuizQuestion(practiceWordPool, modeIndexes.wordQuiz),
-    [modeIndexes.wordQuiz, practiceWordPool],
+    () =>
+      buildWordQuizQuestion(
+        practiceWordPool,
+        modeIndexes.wordQuiz,
+        wordQuizDirection,
+      ),
+    [modeIndexes.wordQuiz, practiceWordPool, wordQuizDirection],
   );
   const phraseBuilderExercise = useMemo(
     () => buildPhraseBuilderExercise(practicePhrasePool, modeIndexes.phraseBuilder),
@@ -143,6 +150,11 @@ const Practice = () => {
 
   const switchMode = (nextMode) => {
     setActiveMode(nextMode);
+    resetInteractionState();
+  };
+
+  const switchWordQuizDirection = (nextDirection) => {
+    setWordQuizDirection(nextDirection);
     resetInteractionState();
   };
 
@@ -267,6 +279,14 @@ const Practice = () => {
         ))}
       </div>
 
+      {activeMode === "wordQuiz" ? (
+        <StudyDirectionSwitch
+          value={wordQuizDirection}
+          onChange={switchWordQuizDirection}
+          description="В квизе RU → EN тренирует активное вспоминание английского слова."
+        />
+      ) : null}
+
       <div className="review-layout practice-layout">
         <article className="card practice-main-card">
           {activeMode === "wordQuiz" && wordQuizQuestion ? (
@@ -274,26 +294,40 @@ const Practice = () => {
               <div className="section-head">
                 <div>
                   <p className="page-kicker">Квиз слов</p>
-                  <h3>{capitalizeWord(wordQuizQuestion.targetWord.word)}</h3>
+                  <h3 className="practice-word-title">
+                    {wordQuizDirection === "ru-en"
+                      ? wordQuizQuestion.targetWord.translation
+                      : capitalizeWord(wordQuizQuestion.targetWord.word)}
+                  </h3>
                 </div>
-                <AudioButton
-                  text={
-                    wordQuizQuestion.targetWord.audioText ||
-                    wordQuizQuestion.targetWord.word
-                  }
-                  accent={settings.voiceAccent}
-                />
+                {wordQuizDirection === "en-ru" || submitted ? (
+                  <AudioButton
+                    text={
+                      wordQuizQuestion.targetWord.audioText ||
+                      wordQuizQuestion.targetWord.word
+                    }
+                    accent={settings.voiceAccent}
+                  />
+                ) : null}
               </div>
 
               <div className="chip-row">
                 <span className="chip chip-accent">
                   {wordQuizQuestion.targetWord.category}
                 </span>
-                <span className="chip">{wordQuizQuestion.targetWord.transcription}</span>
+                {wordQuizDirection === "en-ru" || submitted ? (
+                  <span className="chip">
+                    {wordQuizQuestion.targetWord.transcription}
+                  </span>
+                ) : (
+                  <span className="chip">Вспомни английское слово</span>
+                )}
               </div>
 
               <p className="practice-prompt">
-                Выбери правильный перевод для этого слова.
+                {wordQuizDirection === "ru-en"
+                  ? "Выбери английское слово для этого русского значения."
+                  : "Выбери правильный перевод для этого слова."}
               </p>
 
               <div className="practice-option-grid">
@@ -319,19 +353,33 @@ const Practice = () => {
                       onClick={() => handleQuizAnswer(option)}
                       disabled={submitted}
                     >
-                      {option}
+                      {wordQuizDirection === "ru-en" ? capitalizeWord(option) : option}
                     </button>
                   );
                 })}
               </div>
 
               {submitted ? (
-                <div className="practice-feedback practice-feedback-success">
+                <div
+                  className={
+                    selectedOption === wordQuizQuestion.correctAnswer
+                      ? "practice-feedback practice-feedback-success"
+                      : "practice-feedback practice-feedback-danger"
+                  }
+                >
                   <strong>
                     {selectedOption === wordQuizQuestion.correctAnswer
                       ? "Верно"
                       : "Нужно повторить"}
                   </strong>
+                  <p>
+                    Ответ:{" "}
+                    <strong>
+                      {wordQuizDirection === "ru-en"
+                        ? capitalizeWord(wordQuizQuestion.targetWord.word)
+                        : wordQuizQuestion.targetWord.translation}
+                    </strong>
+                  </p>
                   <p>
                     {wordQuizQuestion.targetWord.example}
                     <br />
