@@ -6,6 +6,8 @@ const navItems = [
   { to: "/learn", label: "Новые слова" },
   { to: "/review", label: "Повторение" },
   { to: "/practice", label: "Практика" },
+  { to: "/videos", label: "Видео" },
+  { to: "/add-word", label: "Добавить слово" },
   { to: "/dictionary", label: "Словарь" },
   { to: "/mistakes", label: "Ошибки" },
   { to: "/grammar", label: "Грамматика" },

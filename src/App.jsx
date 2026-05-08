@@ -15,6 +15,9 @@ import Practice from "./pages/Practice";
 import Progress from "./pages/Progress";
 import Review from "./pages/Review";
 import Settings from "./pages/Settings";
+import AddWord from "./pages/AddWord";
+import Videos from "./pages/Videos";
+import { createCustomWord, normalizeCustomWords } from "./utils/customWords";
 import { getTodayDateKey, parseDateKey } from "./utils/dates";
 import {
   getCategoryInsights,
@@ -39,6 +42,8 @@ const STORAGE_KEYS = {
   dailyState: "englishFlow_dailyState",
   grammarProgress: "englishFlow_grammarProgress",
   courseProgress: "englishFlow_courseProgress",
+  customWords: "englishFlow_customWords",
+  videoProgress: "englishFlow_videoProgress",
 };
 
 const DEFAULT_SETTINGS = {
@@ -152,41 +157,73 @@ function App() {
     STORAGE_KEYS.courseProgress,
     {},
   );
+  const [customWords, setCustomWords] = useLocalStorage(
+    STORAGE_KEYS.customWords,
+    [],
+  );
+  const [videoProgress, setVideoProgress] = useLocalStorage(
+    STORAGE_KEYS.videoProgress,
+    {},
+  );
+
+  const normalizedCustomWords = useMemo(
+    () => normalizeCustomWords(customWords),
+    [customWords],
+  );
 
   const wordsProgress = useMemo(
-    () => mergeWordsWithDefaults(storedWordsProgress),
-    [storedWordsProgress],
+    () => mergeWordsWithDefaults(storedWordsProgress, normalizedCustomWords),
+    [normalizedCustomWords, storedWordsProgress],
   );
 
   const setWordsProgress = useCallback(
     (nextWordsOrUpdater) => {
       setStoredWordsProgress((currentStoredProgress) => {
-        const currentWords = mergeWordsWithDefaults(currentStoredProgress);
+        const currentWords = mergeWordsWithDefaults(
+          currentStoredProgress,
+          normalizedCustomWords,
+        );
         const nextWords =
           typeof nextWordsOrUpdater === "function"
             ? nextWordsOrUpdater(currentWords)
             : nextWordsOrUpdater;
 
-        return createWordsProgressSnapshot(nextWords);
+        return createWordsProgressSnapshot(nextWords, normalizedCustomWords);
       });
     },
-    [setStoredWordsProgress],
+    [normalizedCustomWords, setStoredWordsProgress],
   );
 
   useEffect(() => {
     setSettings((current) => ({ ...DEFAULT_SETTINGS, ...(current ?? {}) }));
-    setStoredWordsProgress((current) => normalizeStoredWordsProgress(current));
+    setCustomWords((current) => {
+      const normalized = normalizeCustomWords(current);
+      return JSON.stringify(current ?? []) === JSON.stringify(normalized)
+        ? current
+        : normalized;
+    });
+    setStoredWordsProgress((current) =>
+      normalizeStoredWordsProgress(current, normalizedCustomWords),
+    );
     setGrammarProgress((current) =>
       current && typeof current === "object" ? current : {},
     );
     setCourseProgress((current) =>
       current && typeof current === "object" ? current : {},
     );
+    setVideoProgress((current) =>
+      current && typeof current === "object" && !Array.isArray(current)
+        ? current
+        : {},
+    );
   }, [
     setCourseProgress,
+    setCustomWords,
     setGrammarProgress,
     setSettings,
     setStoredWordsProgress,
+    setVideoProgress,
+    normalizedCustomWords,
   ]);
 
   const normalizedSettings = useMemo(
@@ -385,6 +422,27 @@ function App() {
     });
   };
 
+  const addCustomWord = (payload) => {
+    const nextWord = createCustomWord(payload);
+
+    if (!nextWord) {
+      throw new Error("Не удалось создать слово");
+    }
+
+    setCustomWords((current) => {
+      const normalized = normalizeCustomWords(current);
+      const hasDuplicate = normalized.some(
+        (word) =>
+          String(word.word).trim().toLowerCase() ===
+          String(nextWord.word).trim().toLowerCase(),
+      );
+
+      return hasDuplicate ? normalized : [...normalized, nextWord];
+    });
+
+    return nextWord;
+  };
+
   const selectGrammarAnswer = (lessonId, selectedAnswer) => {
     setGrammarProgress((current) => ({
       ...(current ?? {}),
@@ -417,14 +475,20 @@ function App() {
     setDailyState(createInitialDailyState(today));
     setGrammarProgress({});
     setCourseProgress({});
+    setVideoProgress({});
   };
 
   const exportAppData = () => ({
-    [STORAGE_KEYS.wordsProgress]: normalizeStoredWordsProgress(storedWordsProgress),
+    [STORAGE_KEYS.wordsProgress]: normalizeStoredWordsProgress(
+      storedWordsProgress,
+      normalizedCustomWords,
+    ),
     [STORAGE_KEYS.settings]: normalizedSettings,
     [STORAGE_KEYS.dailyState]: normalizedDailyState,
     [STORAGE_KEYS.grammarProgress]: grammarProgress,
     [STORAGE_KEYS.courseProgress]: courseProgress,
+    [STORAGE_KEYS.customWords]: normalizedCustomWords,
+    [STORAGE_KEYS.videoProgress]: videoProgress,
   });
 
   const importAppData = (payload) => {
@@ -438,8 +502,15 @@ function App() {
     };
     const nextStoredWordsProgress = normalizeStoredWordsProgress(
       payload[STORAGE_KEYS.wordsProgress] ?? storedWordsProgress,
+      normalizeCustomWords(payload[STORAGE_KEYS.customWords] ?? normalizedCustomWords),
     );
-    const nextWords = mergeWordsWithDefaults(nextStoredWordsProgress);
+    const nextCustomWords = normalizeCustomWords(
+      payload[STORAGE_KEYS.customWords] ?? normalizedCustomWords,
+    );
+    const nextWords = mergeWordsWithDefaults(
+      nextStoredWordsProgress,
+      nextCustomWords,
+    );
     const nextDailyState = normalizeDailyState({
       dailyState: payload[STORAGE_KEYS.dailyState] ?? normalizedDailyState,
       settings: nextSettings,
@@ -456,12 +527,20 @@ function App() {
       typeof payload[STORAGE_KEYS.courseProgress] === "object"
         ? payload[STORAGE_KEYS.courseProgress]
         : {};
+    const nextVideoProgress =
+      payload[STORAGE_KEYS.videoProgress] &&
+      typeof payload[STORAGE_KEYS.videoProgress] === "object" &&
+      !Array.isArray(payload[STORAGE_KEYS.videoProgress])
+        ? payload[STORAGE_KEYS.videoProgress]
+        : {};
 
     setSettings(nextSettings);
+    setCustomWords(nextCustomWords);
     setStoredWordsProgress(nextStoredWordsProgress);
     setDailyState(nextDailyState);
     setGrammarProgress(nextGrammarProgress);
     setCourseProgress(nextCourseProgress);
+    setVideoProgress(nextVideoProgress);
   };
 
   const selectCourseAnswer = (lessonId, exerciseIndex, selectedAnswer) => {
@@ -539,11 +618,13 @@ function App() {
   const appContext = {
     checkCourseAnswer,
     checkGrammarAnswer,
+    addCustomWord,
     courseLessons: COURSE_LESSONS,
     courseProgress,
     courseStats,
     selectCourseAnswer,
     dailyState: normalizedDailyState,
+    customWords: normalizedCustomWords,
     dueWords,
     dailyPhrases,
     exportAppData,
@@ -564,9 +645,11 @@ function App() {
     todayNewWords,
     updateCourseWriting,
     updateSettings,
+    videoProgress,
     weakWords,
     wordsProgress,
     markCourseLessonComplete,
+    setVideoProgress,
   };
 
   return (
@@ -577,6 +660,8 @@ function App() {
         <Route path="/learn" element={<Learn />} />
         <Route path="/review" element={<Review />} />
         <Route path="/practice" element={<Practice />} />
+        <Route path="/videos" element={<Videos />} />
+        <Route path="/add-word" element={<AddWord />} />
         <Route path="/dictionary" element={<Dictionary />} />
         <Route path="/mistakes" element={<Mistakes />} />
         <Route path="/grammar" element={<Grammar />} />

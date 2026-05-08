@@ -2,12 +2,17 @@ import WORDS_DATA from "../data/words.js";
 
 const hasOwn = Object.prototype.hasOwnProperty;
 
-const WORD_DEFAULTS_MAP = new Map(WORDS_DATA.map((word) => [word.id, word]));
+const createWordDefaultsMap = (customWords = []) =>
+  new Map(
+    [...WORDS_DATA, ...(Array.isArray(customWords) ? customWords : [])].map(
+      (word) => [word.id, word],
+    ),
+  );
 
 const normalizeNumber = (value, fallback = 0) => Number(value ?? fallback) || 0;
 
-const getDefaultWord = (wordId) =>
-  WORD_DEFAULTS_MAP.get(wordId) ?? {
+const getDefaultWord = (wordId, wordDefaultsMap = createWordDefaultsMap()) =>
+  wordDefaultsMap.get(wordId) ?? {
     reviewStage: 0,
     nextReviewDate: null,
     errorCount: 0,
@@ -49,16 +54,20 @@ const compactProgressEntry = (sourceEntry = {}, defaultWord = {}) => {
   return compactEntry;
 };
 
-export const createWordsProgressSnapshot = (words) => {
+export const createWordsProgressSnapshot = (words, customWords = []) => {
   const safeWords = Array.isArray(words) ? words : [];
+  const wordDefaultsMap = createWordDefaultsMap(customWords);
   const snapshot = {};
 
   safeWords.forEach((word) => {
-    if (!word?.id || !WORD_DEFAULTS_MAP.has(word.id)) {
+    if (!word?.id || !wordDefaultsMap.has(word.id)) {
       return;
     }
 
-    const compactEntry = compactProgressEntry(word, getDefaultWord(word.id));
+    const compactEntry = compactProgressEntry(
+      word,
+      getDefaultWord(word.id, wordDefaultsMap),
+    );
 
     if (Object.keys(compactEntry).length > 0) {
       snapshot[word.id] = compactEntry;
@@ -68,25 +77,26 @@ export const createWordsProgressSnapshot = (words) => {
   return snapshot;
 };
 
-export const normalizeStoredWordsProgress = (storedProgress) => {
+export const normalizeStoredWordsProgress = (storedProgress, customWords = []) => {
   if (Array.isArray(storedProgress)) {
-    return createWordsProgressSnapshot(storedProgress);
+    return createWordsProgressSnapshot(storedProgress, customWords);
   }
 
   if (!storedProgress || typeof storedProgress !== "object") {
     return {};
   }
 
+  const wordDefaultsMap = createWordDefaultsMap(customWords);
   const normalizedSnapshot = {};
 
   Object.entries(storedProgress).forEach(([wordId, storedEntry]) => {
-    if (!WORD_DEFAULTS_MAP.has(wordId)) {
+    if (!wordDefaultsMap.has(wordId)) {
       return;
     }
 
     const compactEntry = compactProgressEntry(
       storedEntry && typeof storedEntry === "object" ? storedEntry : {},
-      getDefaultWord(wordId),
+      getDefaultWord(wordId, wordDefaultsMap),
     );
 
     if (Object.keys(compactEntry).length > 0) {
@@ -97,10 +107,14 @@ export const normalizeStoredWordsProgress = (storedProgress) => {
   return normalizedSnapshot;
 };
 
-export const mergeWordsWithDefaults = (storedProgress) => {
-  const normalizedSnapshot = normalizeStoredWordsProgress(storedProgress);
+export const mergeWordsWithDefaults = (storedProgress, customWords = []) => {
+  const safeCustomWords = Array.isArray(customWords) ? customWords : [];
+  const normalizedSnapshot = normalizeStoredWordsProgress(
+    storedProgress,
+    safeCustomWords,
+  );
 
-  return WORDS_DATA.map((word) => {
+  return [...WORDS_DATA, ...safeCustomWords].map((word) => {
     const storedEntry = normalizedSnapshot[word.id] ?? {};
 
     return {

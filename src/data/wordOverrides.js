@@ -1,6 +1,8 @@
 import { BATCH_100_WORD_OVERRIDES } from "./manualBatch100.js";
 import { BATCH_200_WORD_OVERRIDES } from "./manualBatch200.js";
 import { BATCH_300_WORD_OVERRIDES } from "./manualBatch300.js";
+import { BATCH_1000_WORD_OVERRIDES } from "./manualBatch1000.js";
+import { BATCH_400_900_WORD_OVERRIDES } from "./manualExampleOverrides400900.js";
 
 export const CUSTOM_WORD_OVERRIDES = {
   publish: {
@@ -243,5 +245,7 @@ export const CUSTOM_WORD_OVERRIDES = {
 Object.assign(CUSTOM_WORD_OVERRIDES, BATCH_100_WORD_OVERRIDES);
 Object.assign(CUSTOM_WORD_OVERRIDES, BATCH_200_WORD_OVERRIDES);
 Object.assign(CUSTOM_WORD_OVERRIDES, BATCH_300_WORD_OVERRIDES);
+Object.assign(CUSTOM_WORD_OVERRIDES, BATCH_400_900_WORD_OVERRIDES);
+Object.assign(CUSTOM_WORD_OVERRIDES, BATCH_1000_WORD_OVERRIDES);
 
 export default CUSTOM_WORD_OVERRIDES;
