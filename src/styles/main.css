@@ -159,20 +159,20 @@ select {
 .main-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 4px;
 }
 
 .nav-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
-  padding: 8px 12px;
+  min-height: 28px;
+  padding: 4px 8px;
   border: 1px solid transparent;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.82);
   color: #32435f;
-  font-size: 0.92rem;
+  font-size: 13px;
   transition:
     background-color 0.2s ease,
     color 0.2s ease,
@@ -650,6 +650,13 @@ select {
   gap: 12px;
 }
 
+.video-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .video-content h3 {
   font-size: 1.25rem;
   line-height: 1.25;
@@ -660,6 +667,50 @@ select {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.video-translator {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(215, 224, 234, 0.92);
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.86);
+}
+
+.video-translator-head {
+  display: grid;
+  gap: 2px;
+}
+
+.video-translator-head strong {
+  color: var(--text);
+}
+
+.video-translator-head span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.video-translator-form,
+.video-translator-result,
+.video-translator-manual {
+  display: grid;
+  gap: 10px;
+}
+
+.video-translator-result {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.video-translator-result strong,
+.video-translator-result span {
+  display: block;
+}
+
+.video-translator-input {
+  min-height: 40px;
 }
 
 .video-details {
@@ -835,7 +886,10 @@ select {
 
 .word-card-layout {
   display: grid;
-  grid-template-columns: minmax(240px, 0.76fr) minmax(0, 1.24fr);
+  grid-template-columns:
+    minmax(330px, 0.95fr)
+    minmax(210px, 0.75fr)
+    minmax(250px, 0.85fr);
   gap: 16px;
   align-items: start;
   padding-top: 16px;
@@ -850,6 +904,11 @@ select {
 
 .word-details-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.word-example-column {
+  min-height: 100%;
+  padding: 4px 6px;
 }
 
 .word-main-row {
@@ -913,6 +972,43 @@ select {
   border: 1px solid rgba(204, 251, 241, 0.9);
   border-radius: 8px;
   background: rgba(240, 253, 250, 0.9);
+}
+
+.mnemonic-image-button {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 82px;
+  margin: 12px 0;
+  padding: 8px;
+  border: 1px solid rgba(15, 118, 110, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--accent-strong);
+  font: inherit;
+  font-weight: 800;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.mnemonic-image-button:hover {
+  border-color: rgba(15, 118, 110, 0.34);
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-1px);
+}
+
+.mnemonic-image-button img {
+  width: 86px;
+  height: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #ffffff;
 }
 
 .mnemonic-block-head {
@@ -999,6 +1095,31 @@ select {
   gap: 10px;
 }
 
+.mnemonic-image-modal {
+  max-width: min(760px, calc(100vw - 28px));
+}
+
+.mnemonic-image-modal-body {
+  display: grid;
+  gap: 16px;
+}
+
+.mnemonic-image-modal-body img {
+  width: 100%;
+  max-height: 68vh;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  object-fit: contain;
+  background: #ffffff;
+}
+
+.mnemonic-image-modal-body p {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
 .mnemonic-modal-section strong {
   color: var(--text);
 }
@@ -1061,6 +1182,14 @@ select {
   max-width: 920px;
   width: 100%;
   margin: 0 auto;
+}
+
+.review-card .chip-row {
+  margin-bottom: 10px;
+}
+
+.review-card .card-head {
+  margin-bottom: 6px;
 }
 
 .review-prompt {
@@ -1251,6 +1380,25 @@ select {
 .settings-section-head {
   display: grid;
   gap: 6px;
+}
+
+.cloud-auth-form,
+.cloud-account-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.cloud-auth-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+}
+
+.cloud-auth-form .button-row {
+  grid-column: 1 / -1;
+}
+
+.cloud-auth-form .notice {
+  grid-column: 1 / -1;
 }
 
 .form-field {
@@ -1493,6 +1641,191 @@ select {
 .practice-feedback-danger {
   border: 1px solid rgba(252, 165, 165, 0.8);
   background: rgba(254, 242, 242, 0.95);
+}
+
+.writing-layout .writing-card {
+  min-height: auto;
+}
+
+.writing-intro-card {
+  min-height: auto;
+  gap: 8px;
+}
+
+.writing-intro-card h3 {
+  margin: 0;
+}
+
+.writing-intro-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.writing-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.writing-title {
+  margin: 0;
+  font-size: clamp(1.65rem, 3vw, 2.2rem);
+  line-height: 1.08;
+}
+
+.writing-answer-inline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid rgba(215, 224, 234, 0.9);
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.92);
+  font: inherit;
+}
+
+.writing-answer-inline-button {
+  cursor: pointer;
+}
+
+.writing-answer-inline-button:hover {
+  border-color: rgba(15, 118, 110, 0.28);
+  box-shadow: var(--shadow-soft);
+}
+
+.writing-answer-inline span {
+  color: var(--muted);
+}
+
+.writing-answer-inline strong {
+  color: var(--text);
+}
+
+.writing-answer-hidden {
+  color: transparent !important;
+  text-shadow: 0 0 16px rgba(21, 32, 51, 0.9);
+  filter: blur(8px);
+  user-select: none;
+}
+
+.writing-form,
+.writing-progress-block {
+  display: grid;
+  gap: 12px;
+}
+
+.writing-target-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.target-repeat-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #32435f;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.target-repeat-button:hover {
+  border-color: rgba(15, 118, 110, 0.28);
+}
+
+.target-repeat-button-active {
+  background: #152033;
+  border-color: #152033;
+  color: #ffffff;
+}
+
+.writing-input-label {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid rgba(215, 224, 234, 0.9);
+  border-radius: 8px;
+  background: rgba(247, 249, 252, 0.92);
+}
+
+.writing-input-label span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.writing-input-label strong {
+  font-size: 1.35rem;
+}
+
+.writing-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.writing-input {
+  min-height: 48px;
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.writing-input-error {
+  border-color: rgba(185, 28, 28, 0.72);
+  background: rgba(254, 242, 242, 0.95);
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.12);
+}
+
+.writing-progress-head,
+.writing-answer-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.writing-answer-card {
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid rgba(215, 224, 234, 0.9);
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.92);
+}
+
+.writing-answer-card span {
+  color: var(--muted);
+}
+
+.writing-answer-card strong {
+  color: var(--text);
+  font-size: 1.1rem;
+}
+
+.writing-queue-button {
+  width: 100%;
+  border: 1px solid rgba(215, 224, 234, 0.85);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.writing-queue-button:hover {
+  border-color: rgba(15, 118, 110, 0.24);
+  transform: translateY(-1px);
 }
 
 .phrase-stack {
@@ -2053,6 +2386,7 @@ textarea.text-input {
   .settings-grid,
   .add-word-layout,
   .form-grid,
+  .cloud-auth-form,
   .dashboard-secondary-grid,
   .dashboard-detail-grid,
   .grammar-grid,
@@ -2065,12 +2399,17 @@ textarea.text-input {
   .category-toggle-grid,
   .session-metrics,
   .practice-option-grid,
+  .writing-input-row,
+  .video-translator-result,
   .token-bank {
     grid-template-columns: 1fr;
   }
 
   .button-row,
   .word-actions,
+  .writing-input-row,
+  .writing-progress-head,
+  .writing-answer-card,
   .plan-step,
   .mini-word-row,
   .queue-item,

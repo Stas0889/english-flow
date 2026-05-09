@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import MnemonicImage from "./MnemonicImage";
 import { capitalizeWord } from "../utils/text";
 
 const splitMnemonicParagraphs = (value = "") =>
@@ -80,6 +81,7 @@ const MnemonicPanel = ({ word }) => {
             {richDetails ? "Полная версия" : "Подробнее"}
           </button>
         </div>
+        <MnemonicImage word={word} />
         <p>{word.mnemonic}</p>
       </div>
 

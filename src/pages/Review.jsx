@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import EmptyState from "../components/EmptyState";
 import ReviewCard from "../components/ReviewCard";
 import StudyDirectionSwitch from "../components/StudyDirectionSwitch";
@@ -7,7 +7,7 @@ import { capitalizeWord } from "../utils/text";
 
 const Review = () => {
   const { dueWords, handleWordAction, settings } = useOutletContext();
-  const [studyDirection, setStudyDirection] = useState("en-ru");
+  const [studyDirection, setStudyDirection] = useState("ru-en");
   const isReverseMode = studyDirection === "ru-en";
 
   if (!dueWords.length) {
@@ -110,7 +110,14 @@ const Review = () => {
                 <li>Сначала попробуй вспомнить ответ до раскрытия карточки.</li>
                 <li>Жми «Сложно», если слово узнаётся, но ещё не держится уверенно.</li>
                 <li>Жми «Не помню», если хочешь вернуть слово на раннюю стадию.</li>
+                <li>Жми «Запомнил», если слово уже не должно попадаться.</li>
               </ul>
+            </div>
+
+            <div className="button-row">
+              <Link to="/practice?mode=writing" className="button button-secondary">
+                Написать слово
+              </Link>
             </div>
           </article>
         </aside>

@@ -168,6 +168,13 @@ const SPECIAL_SINGLE_OVERRIDES = {
     workExample: "The client will arrive before the project review.",
     workExampleTranslation: "Клиент прибудет до ревью проекта.",
   },
+  baker: {
+    example: "The baker makes fresh bread every morning.",
+    exampleTranslation: "Пекарь каждое утро делает свежий хлеб.",
+    workExample: "Use a baker photo on the bakery landing page.",
+    workExampleTranslation:
+      "Используй фото пекаря на лендинге пекарни.",
+  },
   happen: {
     example: "Mistakes can happen.",
     exampleTranslation: "Ошибки могут случаться.",
@@ -269,6 +276,97 @@ const SPECIAL_SINGLE_OVERRIDES = {
     workExample: "A long payment form can create fear before checkout.",
     workExampleTranslation:
       "Длинная форма оплаты может вызвать страх перед оформлением заказа.",
+  },
+  forest: {
+    example: "The forest is quiet today.",
+    exampleTranslation: "Сегодня в лесу тихо.",
+    workExample: "Use a lighter forest photo so the headline is easy to read.",
+    workExampleTranslation:
+      "Используй более светлое фото леса, чтобы заголовок легко читался.",
+  },
+  friend: {
+    example: "My friend can help today.",
+    exampleTranslation: "Мой друг может помочь сегодня.",
+    workExample: "Ask a friend to review the draft before you send it to the client.",
+    workExampleTranslation:
+      "Попроси друга проверить черновик перед отправкой клиенту.",
+  },
+  fruit: {
+    example: "This fruit looks fresh.",
+    exampleTranslation: "Этот фрукт выглядит свежим.",
+    workExample: "Use a fresh fruit image for the healthy menu section.",
+    workExampleTranslation:
+      "Используй свежее изображение фрукта для секции здорового меню.",
+  },
+  future: {
+    example: "The future starts with small practice.",
+    exampleTranslation: "Будущее начинается с маленькой практики.",
+    workExample: "This feature is planned for the future version of the site.",
+    workExampleTranslation:
+      "Эта функция запланирована для будущей версии сайта.",
+  },
+  garden: {
+    example: "The garden looks calm.",
+    exampleTranslation: "Сад выглядит спокойным.",
+    workExample: "Add garden photos to make the hotel page feel warmer.",
+    workExampleTranslation:
+      "Добавь фотографии сада, чтобы страница отеля выглядела теплее.",
+  },
+  general: {
+    example: "This is the general idea.",
+    exampleTranslation: "Это общая идея.",
+    workExample: "Start with the general layout before you edit small details.",
+    workExampleTranslation:
+      "Начни с общего макета, прежде чем править мелкие детали.",
+  },
+  geography: {
+    example: "Geography helps us understand places.",
+    exampleTranslation: "География помогает нам понимать места.",
+    workExample: "Add a map to the geography lesson so students can see the countries.",
+    workExampleTranslation:
+      "Добавь карту в урок географии, чтобы ученики видели страны.",
+  },
+  government: {
+    example: "The government has a new rule.",
+    exampleTranslation: "У правительства есть новое правило.",
+    workExample: "The government website must work well on mobile.",
+    workExampleTranslation:
+      "Сайт правительства должен хорошо работать на телефоне.",
+  },
+  guide: {
+    example: "This guide is easy to follow.",
+    exampleTranslation: "Этому руководству легко следовать.",
+    workExample: "Send the editing guide to the client before handoff.",
+    workExampleTranslation:
+      "Отправь клиенту руководство по редактированию перед передачей проекта.",
+  },
+  habit: {
+    example: "Daily practice becomes a habit.",
+    exampleTranslation: "Ежедневная практика становится привычкой.",
+    workExample: "Make a habit of checking the mobile version before launch.",
+    workExampleTranslation:
+      "Сделай привычкой проверять мобильную версию перед запуском.",
+  },
+  half: {
+    example: "Half of the work is ready.",
+    exampleTranslation: "Половина работы готова.",
+    workExample: "Use half of the screen for the image and half for the text.",
+    workExampleTranslation:
+      "Используй половину экрана для изображения и половину для текста.",
+  },
+  hall: {
+    example: "The hall is quiet now.",
+    exampleTranslation: "Сейчас в зале тихо.",
+    workExample: "The hotel hall needs brighter photos and clearer signs.",
+    workExampleTranslation:
+      "Холлу отеля нужны более светлые фото и более понятные указатели.",
+  },
+  hand: {
+    example: "My hand is cold.",
+    exampleTranslation: "Моя рука холодная.",
+    workExample: "Move the icon by hand if auto-align does not work.",
+    workExampleTranslation:
+      "Передвинь иконку вручную, если авто-выравнивание не работает.",
   },
   information: {
     example: "This information is useful.",

@@ -87,18 +87,16 @@ const WordCard = ({ word, accent, onAction, studyDirection = "en-ru" }) => {
           <MnemonicPanel word={word} />
         </div>
 
-        <div className="word-details-grid">
-          <div className="detail-block">
-            <strong>Простое предложение:</strong>
-            <p>{word.example}</p>
-            <p className="muted">{word.exampleTranslation}</p>
-          </div>
+        <div className="detail-block word-example-column">
+          <strong>Простое предложение:</strong>
+          <p>{word.example}</p>
+          <p className="muted">{word.exampleTranslation}</p>
+        </div>
 
-          <div className="detail-block">
-            <strong>Рабочий пример:</strong>
-            <p>{word.workExample}</p>
-            <p className="muted">{word.workExampleTranslation}</p>
-          </div>
+        <div className="detail-block word-example-column">
+          <strong>Рабочий пример:</strong>
+          <p>{word.workExample}</p>
+          <p className="muted">{word.workExampleTranslation}</p>
         </div>
       </div>
 

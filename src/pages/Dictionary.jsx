@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
+import StudyDirectionSwitch from "../components/StudyDirectionSwitch";
 import { formatDisplayDate } from "../utils/dates";
 import { getWordStatusLabel } from "../utils/progress";
 import { capitalizeWord } from "../utils/text";
@@ -14,9 +15,12 @@ const filters = [
 ];
 
 const Dictionary = () => {
-  const { wordsProgress } = useOutletContext();
+  const { addWordToTodayLearning, dailyState, wordsProgress } =
+    useOutletContext();
   const [activeFilter, setActiveFilter] = useState("all");
+  const [cardDirection, setCardDirection] = useState("ru-en");
   const [searchQuery, setSearchQuery] = useState("");
+  const [lastQueuedWordId, setLastQueuedWordId] = useState("");
 
   const filteredWords = useMemo(() => {
     let result;
@@ -60,6 +64,11 @@ const Dictionary = () => {
     );
   }, [activeFilter, searchQuery, wordsProgress]);
 
+  const handleLearnToday = (wordId) => {
+    addWordToTodayLearning(wordId);
+    setLastQueuedWordId(wordId);
+  };
+
   return (
     <section className="stack">
       <div className="page-hero page-hero-compact">
@@ -101,40 +110,76 @@ const Dictionary = () => {
           placeholder="Поиск по слову, переводу, категории или транскрипции"
           onChange={(event) => setSearchQuery(event.target.value)}
         />
+        <StudyDirectionSwitch
+          value={cardDirection}
+          onChange={setCardDirection}
+          description="EN → RU удобно для узнавания слова, RU → EN помогает вспоминать слово для речи и переписки."
+        />
+        {lastQueuedWordId ? (
+          <p className="success-text">
+            Слово добавлено в новые слова на сегодня.
+          </p>
+        ) : null}
       </div>
 
       <div className="dictionary-grid">
-        {filteredWords.map((word) => (
-          <article key={word.id} className="card dictionary-card">
-            <div className="card-head">
-              <div>
-                <div className="chip-row">
-                  <span className="chip chip-accent">{word.category}</span>
-                  <span className="chip">{getWordStatusLabel(word)}</span>
+        {filteredWords.map((word) => {
+          const isRuToEn = cardDirection === "ru-en";
+          const primaryText = isRuToEn
+            ? word.translation
+            : capitalizeWord(word.word);
+          const secondaryText = isRuToEn
+            ? capitalizeWord(word.word)
+            : word.translation;
+          const isQueuedToday = dailyState.assignedNewWordIds?.includes(word.id);
+
+          return (
+            <article key={word.id} className="card dictionary-card">
+              <div className="card-head">
+                <div>
+                  <div className="chip-row">
+                    <span className="chip chip-accent">{word.category}</span>
+                    <span className="chip">{getWordStatusLabel(word)}</span>
+                    <span className="chip chip-muted">
+                      {isRuToEn ? "RU → EN" : "EN → RU"}
+                    </span>
+                  </div>
+                  <h3>{primaryText}</h3>
+                  <p className="word-translation">{secondaryText}</p>
                 </div>
-                <h3>{capitalizeWord(word.word)}</h3>
-                <p className="word-translation">{word.translation}</p>
+                <span className="word-image" aria-hidden="true">
+                  {word.image}
+                </span>
               </div>
-              <span className="word-image" aria-hidden="true">
-                {word.image}
-              </span>
-            </div>
-            <div className="info-pairs">
-              <div className="info-pair">
-                <span>Ошибок</span>
-                <strong>{word.errorCount || 0}</strong>
+
+              <div className="info-pairs">
+                <div className="info-pair">
+                  <span>Ошибок</span>
+                  <strong>{word.errorCount || 0}</strong>
+                </div>
+                <div className="info-pair">
+                  <span>Следующее повторение</span>
+                  <strong>{formatDisplayDate(word.nextReviewDate)}</strong>
+                </div>
+                <div className="info-pair">
+                  <span>Транскрипция</span>
+                  <strong>{word.transcription}</strong>
+                </div>
               </div>
-              <div className="info-pair">
-                <span>Следующее повторение</span>
-                <strong>{formatDisplayDate(word.nextReviewDate)}</strong>
+
+              <div className="button-row dictionary-card-actions">
+                <button
+                  type="button"
+                  className={isQueuedToday ? "button button-secondary" : "button"}
+                  onClick={() => handleLearnToday(word.id)}
+                  disabled={isQueuedToday}
+                >
+                  {isQueuedToday ? "Уже в новых" : "Добавить и учить сегодня"}
+                </button>
               </div>
-              <div className="info-pair">
-                <span>Транскрипция</span>
-                <strong>{word.transcription}</strong>
-              </div>
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
     </section>
   );

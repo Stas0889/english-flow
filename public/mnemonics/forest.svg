@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Forest mnemonic</title>
+  <desc id="desc">A forest made of window vents</desc>
+  <rect width="640" height="420" rx="32" fill="#eefdf6"/>
+  <circle cx="540" cy="84" r="78" fill="#bbf7d0" opacity="0.65"/>
+  <path d="M0 338c88-38 182-43 280-13 122 37 238 24 360-18v113H0Z" fill="#86efac"/>
+  <g stroke="#166534" stroke-width="8" stroke-linejoin="round">
+    <g transform="translate(70 86)">
+      <rect x="0" y="62" width="108" height="154" rx="12" fill="#d1fae5"/>
+      <path d="M0 104h108M54 62v154" fill="none"/>
+      <path d="M54 62 110 16v154L54 216Z" fill="#a7f3d0"/>
+      <rect x="42" y="216" width="24" height="76" fill="#854d0e" stroke="#854d0e"/>
+    </g>
+    <g transform="translate(260 52)">
+      <rect x="0" y="76" width="118" height="166" rx="12" fill="#dcfce7"/>
+      <path d="M0 120h118M59 76v166" fill="none"/>
+      <path d="M59 76 125 22v166L59 242Z" fill="#bbf7d0"/>
+      <rect x="47" y="242" width="24" height="86" fill="#854d0e" stroke="#854d0e"/>
+    </g>
+    <g transform="translate(455 108)">
+      <rect x="0" y="58" width="98" height="142" rx="12" fill="#d1fae5"/>
+      <path d="M0 100h98M49 58v142" fill="none"/>
+      <path d="M49 58 101 17v142L49 200Z" fill="#a7f3d0"/>
+      <rect x="37" y="200" width="24" height="70" fill="#854d0e" stroke="#854d0e"/>
+    </g>
+  </g>
+  <text x="320" y="382" font-family="Arial, sans-serif" font-size="30" font-weight="900" text-anchor="middle" fill="#14532d">Forest = лес из форточек</text>
+</svg>

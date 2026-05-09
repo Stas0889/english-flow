@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { Link, useOutletContext } from "react-router-dom";
 import EmptyState from "../components/EmptyState";
 import StudyDirectionSwitch from "../components/StudyDirectionSwitch";
 import WordCard from "../components/WordCard";
 
 const Learn = () => {
   const { dailyState, handleWordAction, settings, todayNewWords } = useOutletContext();
-  const [studyDirection, setStudyDirection] = useState("en-ru");
+  const [studyDirection, setStudyDirection] = useState("ru-en");
   const assignedCount = dailyState.assignedNewWordIds?.length || todayNewWords.length;
   const completedCount = Math.max(0, assignedCount - todayNewWords.length);
   const progressPercent = assignedCount
@@ -103,6 +103,12 @@ const Learn = () => {
               />
             </div>
             <p className="muted">Прогресс сессии: {progressPercent}%.</p>
+
+            <div className="button-row">
+              <Link to="/practice?mode=writing" className="button button-secondary">
+                Написать слово
+              </Link>
+            </div>
 
             <div className="detail-block">
               <strong>Активные категории:</strong>

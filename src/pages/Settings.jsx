@@ -9,9 +9,19 @@ const CATEGORY_OPTIONS = [
 ];
 
 const Settings = () => {
-  const { exportAppData, importAppData, resetProgress, settings, updateSettings } =
-    useOutletContext();
+  const {
+    auth,
+    exportAppData,
+    importAppData,
+    loadCloudState,
+    resetProgress,
+    saveCloudState,
+    settings,
+    updateSettings,
+  } = useOutletContext();
   const [message, setMessage] = useState("");
+  const [authForm, setAuthForm] = useState({ email: "", password: "" });
+  const [cloudBusy, setCloudBusy] = useState(false);
 
   const handleExport = () => {
     const backup = exportAppData();
@@ -68,6 +78,94 @@ const Settings = () => {
     setMessage("");
   };
 
+  const handleAuthSubmit = async (mode) => {
+    setCloudBusy(true);
+    setMessage("");
+
+    try {
+      if (mode === "signup") {
+        await auth.signUp(authForm);
+        setMessage("Аккаунт создан. Если Supabase попросит подтверждение, проверь почту.");
+      } else {
+        await auth.signIn(authForm);
+        setMessage("Вход выполнен.");
+      }
+    } catch (error) {
+      setMessage(error.message || "Не удалось выполнить вход.");
+    } finally {
+      setCloudBusy(false);
+    }
+  };
+
+  const handleCloudSave = async () => {
+    setCloudBusy(true);
+    setMessage("");
+
+    try {
+      await saveCloudState();
+      setMessage("Прогресс сохранён в облако.");
+    } catch (error) {
+      setMessage(error.message || "Не удалось сохранить прогресс.");
+    } finally {
+      setCloudBusy(false);
+    }
+  };
+
+  const handleCloudLoad = async () => {
+    if (
+      !window.confirm(
+        "Загрузить прогресс из облака? Текущие локальные данные будут заменены.",
+      )
+    ) {
+      return;
+    }
+
+    setCloudBusy(true);
+    setMessage("");
+
+    try {
+      await loadCloudState();
+      setMessage("Прогресс загружен из облака.");
+    } catch (error) {
+      setMessage(error.message || "Не удалось загрузить прогресс.");
+    } finally {
+      setCloudBusy(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    setCloudBusy(true);
+    setMessage("");
+
+    try {
+      await auth.signOut();
+      setMessage("Выход выполнен.");
+    } catch (error) {
+      setMessage(error.message || "Не удалось выйти.");
+    } finally {
+      setCloudBusy(false);
+    }
+  };
+
+  const handleResendEmail = async () => {
+    if (!authForm.email.trim()) {
+      setMessage("Введи email, чтобы отправить письмо ещё раз.");
+      return;
+    }
+
+    setCloudBusy(true);
+    setMessage("");
+
+    try {
+      await auth.resendSignupEmail(authForm.email.trim());
+      setMessage("Письмо подтверждения отправлено ещё раз. Проверь почту.");
+    } catch (error) {
+      setMessage(error.message || "Не удалось отправить письмо.");
+    } finally {
+      setCloudBusy(false);
+    }
+  };
+
   return (
     <section className="stack">
       <div className="page-hero page-hero-compact">
@@ -87,6 +185,128 @@ const Settings = () => {
       </div>
 
       <div className="settings-grid settings-grid-advanced">
+        <article className="card settings-card settings-card-wide">
+          <div className="settings-section-head">
+            <h3>Аккаунт и облако</h3>
+            <p className="muted">
+              Пока приложение работает локально. После входа можно вручную
+              сохранить прогресс в Supabase и восстановить его на другом
+              устройстве.
+            </p>
+          </div>
+
+          {!auth.isSupabaseConfigured ? (
+            <p className="notice">
+              Supabase не настроен. Добавь переменные VITE_SUPABASE_URL и
+              VITE_SUPABASE_PUBLISHABLE_KEY.
+            </p>
+          ) : auth.user ? (
+            <div className="cloud-account-panel">
+              <div className="detail-block">
+                <strong>Ты вошёл как</strong>
+                <span className="muted">{auth.user.email}</span>
+              </div>
+              <div className="button-row">
+                <button
+                  type="button"
+                  className="button"
+                  disabled={cloudBusy}
+                  onClick={handleCloudSave}
+                >
+                  Сохранить в облако
+                </button>
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  disabled={cloudBusy}
+                  onClick={handleCloudLoad}
+                >
+                  Загрузить из облака
+                </button>
+                <button
+                  type="button"
+                  className="button button-light"
+                  disabled={cloudBusy}
+                  onClick={handleSignOut}
+                >
+                  Выйти
+                </button>
+              </div>
+              {message ? <p className="notice">{message}</p> : null}
+            </div>
+          ) : (
+            <div className="cloud-auth-form">
+              <label className="form-field">
+                <span>Email</span>
+                <input
+                  type="email"
+                  className="input"
+                  autoComplete="email"
+                  value={authForm.email}
+                  onChange={(event) =>
+                    setAuthForm((current) => ({
+                      ...current,
+                      email: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <label className="form-field">
+                <span>Пароль</span>
+                <input
+                  type="password"
+                  className="input"
+                  autoComplete="current-password"
+                  value={authForm.password}
+                  onChange={(event) =>
+                    setAuthForm((current) => ({
+                      ...current,
+                      password: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+              <div className="button-row">
+                <button
+                  type="button"
+                  className="button"
+                  disabled={
+                    cloudBusy ||
+                    auth.authLoading ||
+                    !authForm.email.trim() ||
+                    !authForm.password
+                  }
+                  onClick={() => handleAuthSubmit("signin")}
+                >
+                  Войти
+                </button>
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  disabled={
+                    cloudBusy ||
+                    auth.authLoading ||
+                    !authForm.email.trim() ||
+                    !authForm.password
+                  }
+                  onClick={() => handleAuthSubmit("signup")}
+                >
+                  Создать аккаунт
+                </button>
+                <button
+                  type="button"
+                  className="button button-light"
+                  disabled={cloudBusy || auth.authLoading || !authForm.email.trim()}
+                  onClick={handleResendEmail}
+                >
+                  Отправить письмо ещё раз
+                </button>
+              </div>
+              {message ? <p className="notice">{message}</p> : null}
+            </div>
+          )}
+        </article>
+
         <article className="card settings-card">
           <div className="settings-section-head">
             <h3>Режим обучения</h3>

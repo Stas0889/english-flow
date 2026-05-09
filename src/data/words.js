@@ -16,6 +16,7 @@ import {
   WEBFLOW_INTERFACE_RIGHTS,
 } from "./wordBank.js";
 import CUSTOM_MNEMONICS, { CUSTOM_MNEMONIC_DETAILS } from "./mnemonics.js";
+import { getMnemonicImageOverride } from "./mnemonicImages.js";
 import CUSTOM_WORD_OVERRIDES from "./wordOverrides.js";
 
 const rawWords = [
@@ -1263,10 +1264,12 @@ const seenWords = new Set();
 
 export const WORDS_DATA = uniqueWords.map((item, index) => {
   const wordOverride = getCustomWordOverride(item.word) ?? {};
+  const imageOverride = getMnemonicImageOverride(normalizeWordKey(item.word)) ?? {};
 
   return {
     ...item,
     ...wordOverride,
+    ...imageOverride,
     audioText: item.audioText ?? item.word,
     difficulty: item.difficulty ?? "easy",
     reviewStage: item.reviewStage ?? 0,

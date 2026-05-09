@@ -44,11 +44,19 @@ export const normalizeCustomWords = (customWords) => {
   return customWords
     .filter((word) => word && typeof word === "object")
     .map((word) => {
+      const today = getTodayDateKey();
       const normalizedWord = normalizeText(word.word);
       const normalizedTranslation = normalizeText(word.translation);
       const id =
         normalizeText(word.id) ||
         `custom-${slugify(normalizedWord)}-${Date.now().toString(36)}`;
+      const createdAt = normalizeText(word.createdAt) || today;
+      const rawStatus = normalizeText(word.status);
+      const shouldMoveFreshWordToLearning =
+        rawStatus === "reviewing" &&
+        createdAt === today &&
+        Number(word.reviewStage) === 0 &&
+        (word.nextReviewDate === today || !word.nextReviewDate);
 
       return {
         id,
@@ -81,13 +89,14 @@ export const normalizeCustomWords = (customWords) => {
         level: normalizeText(word.level) || "A1",
         difficulty: normalizeText(word.difficulty) || "medium",
         reviewStage: Number(word.reviewStage) || 0,
-        nextReviewDate:
-          Object.prototype.hasOwnProperty.call(word, "nextReviewDate")
+        nextReviewDate: shouldMoveFreshWordToLearning
+          ? null
+          : Object.prototype.hasOwnProperty.call(word, "nextReviewDate")
             ? word.nextReviewDate
-            : getTodayDateKey(),
+            : today,
         errorCount: Number(word.errorCount) || 0,
-        status: normalizeText(word.status) || "reviewing",
-        createdAt: normalizeText(word.createdAt) || getTodayDateKey(),
+        status: shouldMoveFreshWordToLearning ? "new" : rawStatus || "reviewing",
+        createdAt,
         source: "custom",
       };
     })
@@ -139,9 +148,9 @@ export const createCustomWord = ({
       level: level || "A1",
       difficulty: "medium",
       reviewStage: 0,
-      nextReviewDate: today,
+      nextReviewDate: null,
       errorCount: 0,
-      status: "reviewing",
+      status: "new",
       createdAt: today,
       source: "custom",
     },

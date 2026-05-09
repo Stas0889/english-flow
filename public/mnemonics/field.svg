@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Field mnemonic</title>
+  <desc id="desc">A field made of fish fillets</desc>
+  <rect width="640" height="420" rx="32" fill="#ecfdf5"/>
+  <path d="M0 288c115-48 196-54 320-4 130 53 214 40 320-3v139H0Z" fill="#86efac"/>
+  <path d="M0 240c132-42 221-40 332-5 124 39 201 33 308-14v86c-106 43-190 56-320 3-124-50-205-44-320 4Z" fill="#bbf7d0"/>
+  <g transform="translate(70 121)">
+    <path d="M0 60c35-61 122-75 183-28 27 21 20 68-13 85-62 31-137 21-170-57Z" fill="#fda4af" stroke="#9f1239" stroke-width="8"/>
+    <path d="M44 45c32 18 68 21 109 4" fill="none" stroke="#ffe4e6" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(250 205) rotate(-8)">
+    <path d="M0 60c35-61 122-75 183-28 27 21 20 68-13 85-62 31-137 21-170-57Z" fill="#fb7185" stroke="#9f1239" stroke-width="8"/>
+    <path d="M44 45c32 18 68 21 109 4" fill="none" stroke="#ffe4e6" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(394 116) rotate(10)">
+    <path d="M0 60c35-61 122-75 183-28 27 21 20 68-13 85-62 31-137 21-170-57Z" fill="#fda4af" stroke="#9f1239" stroke-width="8"/>
+    <path d="M44 45c32 18 68 21 109 4" fill="none" stroke="#ffe4e6" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <text x="320" y="58" font-family="Arial, sans-serif" font-size="32" font-weight="900" text-anchor="middle" fill="#14532d">FIELD = поле из ФИЛЕ</text>
+</svg>

@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
-import { Link, useOutletContext } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useOutletContext, useSearchParams } from "react-router-dom";
 import AudioButton from "../components/AudioButton";
 import EmptyState from "../components/EmptyState";
 import StudyDirectionSwitch from "../components/StudyDirectionSwitch";
+import Writing from "./Writing";
 import PHRASES_DATA from "../data/phrases";
 import PRACTICE_SCENARIOS from "../data/practiceScenarios";
 import {
@@ -16,12 +17,14 @@ import { capitalizeWord } from "../utils/text";
 
 const modes = [
   { id: "wordQuiz", label: "Квиз слов" },
+  { id: "writing", label: "Письмо" },
   { id: "phraseBuilder", label: "Собери фразу" },
   { id: "communication", label: "Рабочая переписка" },
 ];
 
 const initialModeStats = {
   wordQuiz: { answered: 0, correct: 0 },
+  writing: { answered: 0, correct: 0 },
   phraseBuilder: { answered: 0, correct: 0 },
   communication: { answered: 0, correct: 0 },
 };
@@ -50,6 +53,7 @@ const Practice = () => {
   const {
     dailyPhrases,
     dueWords,
+    handleWordAction,
     recordPracticeResult,
     settings,
     studyInsights,
@@ -57,8 +61,10 @@ const Practice = () => {
     weakWords,
     wordsProgress,
   } = useOutletContext();
-  const [activeMode, setActiveMode] = useState("wordQuiz");
-  const [wordQuizDirection, setWordQuizDirection] = useState("en-ru");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialMode = searchParams.get("mode") === "writing" ? "writing" : "wordQuiz";
+  const [activeMode, setActiveMode] = useState(initialMode);
+  const [wordQuizDirection, setWordQuizDirection] = useState("ru-en");
   const [modeStats, setModeStats] = useState(initialModeStats);
   const [modeIndexes, setModeIndexes] = useState({
     wordQuiz: 0,
@@ -69,11 +75,20 @@ const Practice = () => {
   const [selectedTokens, setSelectedTokens] = useState([]);
   const [submitted, setSubmitted] = useState(false);
 
+  useEffect(() => {
+    const modeFromUrl = searchParams.get("mode");
+    if (modeFromUrl === "writing" && activeMode !== "writing") {
+      setActiveMode("writing");
+      resetInteractionState();
+    }
+  }, [activeMode, searchParams]);
+
   const practiceWordPool = useMemo(() => {
     const activeCategories = settings.activeCategories || [];
     const activeWords = wordsProgress.filter(
       (word) =>
         word.status !== "backlog" &&
+        word.status !== "learned" &&
         (!activeCategories.length || activeCategories.includes(word.category)),
     );
     const supportingWords = activeWords.filter(
@@ -150,6 +165,11 @@ const Practice = () => {
 
   const switchMode = (nextMode) => {
     setActiveMode(nextMode);
+    if (nextMode === "writing") {
+      setSearchParams({ mode: "writing" });
+    } else if (searchParams.has("mode")) {
+      setSearchParams({});
+    }
     resetInteractionState();
   };
 
@@ -176,6 +196,15 @@ const Practice = () => {
       [mode]: current[mode] + 1,
     }));
     resetInteractionState();
+  };
+
+  const handleMasterCurrentWord = () => {
+    if (!wordQuizQuestion?.targetWord) {
+      return;
+    }
+
+    handleWordAction(wordQuizQuestion.targetWord.id, "mastered");
+    goToNextExercise("wordQuiz");
   };
 
   const handleQuizAnswer = (option) => {
@@ -287,6 +316,9 @@ const Practice = () => {
         />
       ) : null}
 
+      {activeMode === "writing" ? <Writing embedded /> : null}
+
+      {activeMode !== "writing" ? (
       <div className="review-layout practice-layout">
         <article className="card practice-main-card">
           {activeMode === "wordQuiz" && wordQuizQuestion ? (
@@ -398,6 +430,15 @@ const Practice = () => {
               ) : null}
 
               <div className="button-row">
+                {submitted ? (
+                  <button
+                    type="button"
+                    className="button button-light"
+                    onClick={handleMasterCurrentWord}
+                  >
+                    Запомнил
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="button button-secondary"
@@ -687,6 +728,7 @@ const Practice = () => {
           </article>
         </aside>
       </div>
+      ) : null}
     </section>
   );
 };

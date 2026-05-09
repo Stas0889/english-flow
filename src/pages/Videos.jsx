@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import EmptyState from "../components/EmptyState";
+import VideoWordTranslator from "../components/VideoWordTranslator";
 import VIDEOS_DATA from "../data/videos";
 import { getTodayDateKey } from "../utils/dates";
 
@@ -12,7 +13,13 @@ const getProgressMap = (progress) =>
     : {};
 
 const Videos = () => {
-  const { videoProgress, setVideoProgress } = useOutletContext();
+  const {
+    addCustomWord,
+    addWordToTodayLearning,
+    videoProgress,
+    setVideoProgress,
+    wordsProgress,
+  } = useOutletContext();
   const [levelFilter, setLevelFilter] = useState(allFilter);
   const [topicFilter, setTopicFilter] = useState(allFilter);
   const [showHidden, setShowHidden] = useState(false);
@@ -170,18 +177,30 @@ const Videos = () => {
                 </div>
 
                 <div className="video-content">
-                  <div className="video-meta">
-                    <span className="chip">{video.level}</span>
-                    <span className="chip chip-muted">{video.topic}</span>
+                  <div className="video-title-row">
+                    <h3>{video.title}</h3>
                     {state.watched ? (
                       <span className="chip chip-success">Посмотрено</span>
                     ) : null}
                   </div>
 
-                  <h3>{video.title}</h3>
+                  <VideoWordTranslator
+                    addCustomWord={addCustomWord}
+                    addWordToTodayLearning={addWordToTodayLearning}
+                    wordsProgress={wordsProgress}
+                  />
+
                   <p className="muted-text">{video.description}</p>
 
                   <dl className="video-details">
+                    <div>
+                      <dt>Уровень</dt>
+                      <dd>{video.level}</dd>
+                    </div>
+                    <div>
+                      <dt>Тема</dt>
+                      <dd>{video.topic}</dd>
+                    </div>
                     <div>
                       <dt>Формат</dt>
                       <dd>{video.type}</dd>

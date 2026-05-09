@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Flower mnemonic</title>
+  <desc id="desc">A flower made from a perfume bottle and fans</desc>
+  <rect width="640" height="420" rx="32" fill="#f0fdf4"/>
+  <circle cx="514" cy="98" r="86" fill="#bbf7d0" opacity="0.7"/>
+  <circle cx="122" cy="326" r="86" fill="#d9f99d" opacity="0.7"/>
+  <rect x="276" y="206" width="88" height="150" rx="22" fill="#7dd3fc" stroke="#0369a1" stroke-width="8"/>
+  <rect x="295" y="168" width="50" height="48" rx="12" fill="#bae6fd" stroke="#0369a1" stroke-width="7"/>
+  <rect x="282" y="145" width="76" height="28" rx="10" fill="#0ea5e9" stroke="#0369a1" stroke-width="6"/>
+  <g stroke="#7c2d12" stroke-width="7" stroke-linejoin="round">
+    <path d="M320 151c-98-84-151-43-146 41 78 28 122 8 146-41Z" fill="#f97316"/>
+    <path d="M320 151c98-84 151-43 146 41-78 28-122 8-146-41Z" fill="#fb923c"/>
+    <path d="M320 151c-36-128 30-160 95-107-8 84-42 118-95 107Z" fill="#fdba74"/>
+    <path d="M320 151c36-128-30-160-95-107 8 84 42 118 95 107Z" fill="#fed7aa"/>
+  </g>
+  <circle cx="320" cy="151" r="36" fill="#facc15" stroke="#854d0e" stroke-width="7"/>
+  <text x="320" y="286" font-family="Arial, sans-serif" font-size="26" font-weight="900" text-anchor="middle" fill="#075985">ФЛАКОН</text>
+  <text x="320" y="395" font-family="Arial, sans-serif" font-size="28" font-weight="800" text-anchor="middle" fill="#166534">Flower = цветок из флакона и вееров</text>
+</svg>

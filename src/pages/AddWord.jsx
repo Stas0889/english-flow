@@ -30,7 +30,7 @@ const createInitialForm = (word = "") => ({
 const AddWord = () => {
   const {
     addCustomWord,
-    handleWordAction,
+    addWordToTodayLearning,
     settings,
     wordsProgress,
   } = useOutletContext();
@@ -67,8 +67,8 @@ const AddWord = () => {
   };
 
   const handleReviewNow = (wordId) => {
-    handleWordAction(wordId, "reviewNow");
-    setMessage("Слово добавлено в повторение на сегодня.");
+    addWordToTodayLearning(wordId);
+    setMessage("Слово добавлено в новые слова на сегодня.");
   };
 
   const handleSubmit = (event) => {
@@ -84,7 +84,7 @@ const AddWord = () => {
     }
 
     if (duplicate) {
-      setError("Такое слово уже есть в словаре. Добавь его в повторение кнопкой выше.");
+      setError("Такое слово уже есть в словаре. Добавь его в новые слова кнопкой выше.");
       setQuery(wordText);
       return;
     }
@@ -98,7 +98,7 @@ const AddWord = () => {
     setCreatedWord(nextWord);
     setQuery(wordText);
     setForm(createInitialForm());
-    setMessage("Слово создано и добавлено в повторение на сегодня.");
+    setMessage("Слово создано и добавлено в новые слова на сегодня.");
   };
 
   return (
@@ -166,10 +166,10 @@ const AddWord = () => {
                   className="button"
                   onClick={() => handleReviewNow(foundWord.id)}
                 >
-                  Учить сейчас
+                  Учить сегодня
                 </button>
-                <Link to="/review" className="button button-secondary">
-                  К повторению
+                <Link to="/learn" className="button button-secondary">
+                  К новым словам
                 </Link>
               </div>
             </div>
@@ -341,8 +341,8 @@ const AddWord = () => {
                 Добавить и учить сегодня
               </button>
               {createdWord ? (
-                <Link to="/review" className="button button-secondary">
-                  Открыть повторение
+                <Link to="/learn" className="button button-secondary">
+                  Открыть новые слова
                 </Link>
               ) : null}
             </div>
@@ -354,4 +354,3 @@ const AddWord = () => {
 };
 
 export default AddWord;
-

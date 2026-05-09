@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes } from "react-router-dom";
 import AppLayout from "./components/AppLayout";
 import COURSE_LESSONS from "./data/courseLessons";
 import GRAMMAR_LESSONS from "./data/grammarLessons";
 import PHRASES_DATA from "./data/phrases";
 import useLocalStorage from "./hooks/useLocalStorage";
+import useSupabaseAuth from "./hooks/useSupabaseAuth";
+import { supabase } from "./lib/supabase";
 import Course from "./pages/Course";
 import Dashboard from "./pages/Dashboard";
 import Dictionary from "./pages/Dictionary";
@@ -34,7 +36,7 @@ import {
   mergeWordsWithDefaults,
   normalizeStoredWordsProgress,
 } from "./utils/wordProgress";
-import { getRecommendedNewWords, sortWordsForLearning } from "./utils/wordSelection";
+import { getRecommendedNewWords } from "./utils/wordSelection";
 
 const STORAGE_KEYS = {
   wordsProgress: "englishFlow_wordsProgress",
@@ -44,6 +46,7 @@ const STORAGE_KEYS = {
   courseProgress: "englishFlow_courseProgress",
   customWords: "englishFlow_customWords",
   videoProgress: "englishFlow_videoProgress",
+  writingPractice: "englishFlow_writingPractice",
 };
 
 const DEFAULT_SETTINGS = {
@@ -61,10 +64,43 @@ const createInitialDailyState = (today) => ({
   date: today,
   newWordsPausedToday: false,
   assignedNewWordIds: [],
+  priorityNewWordIds: [],
   completedReviews: 0,
   activityLog: [],
   newWordAssignmentVersion: NEW_WORD_ASSIGNMENT_VERSION,
 });
+
+const createInitialWritingPractice = () => ({
+  queueWordIds: [],
+  hiddenWordIds: [],
+  completedWordIds: [],
+  completedAtByWordId: {},
+  repetitionsByWordId: {},
+});
+
+const normalizeStringList = (value) =>
+  Array.isArray(value)
+    ? value.filter(Boolean).filter((item, index, list) => list.indexOf(item) === index)
+    : [];
+
+const normalizeWritingPractice = (value) => {
+  const source = value && typeof value === "object" ? value : {};
+
+  return {
+    ...createInitialWritingPractice(),
+    queueWordIds: normalizeStringList(source.queueWordIds),
+    hiddenWordIds: normalizeStringList(source.hiddenWordIds),
+    completedWordIds: normalizeStringList(source.completedWordIds),
+    completedAtByWordId:
+      source.completedAtByWordId && typeof source.completedAtByWordId === "object"
+        ? source.completedAtByWordId
+        : {},
+    repetitionsByWordId:
+      source.repetitionsByWordId && typeof source.repetitionsByWordId === "object"
+        ? source.repetitionsByWordId
+        : {},
+  };
+};
 
 const normalizeDailyState = ({ dailyState, settings, today, words }) => {
   const baseState = {
@@ -83,22 +119,55 @@ const normalizeDailyState = ({ dailyState, settings, today, words }) => {
   if (baseState.date !== today) {
     nextState.newWordsPausedToday = false;
     nextState.assignedNewWordIds = [];
+    nextState.priorityNewWordIds = [];
   }
 
-  const availableIds = getRecommendedNewWords(
+  const wordsMap = new Map(words.map((word) => [word.id, word]));
+  const customTodayNewWordIds = words
+    .filter(
+      (word) =>
+        word.source === "custom" &&
+        word.status === "new" &&
+        word.createdAt === today,
+    )
+    .map((word) => word.id);
+  const rawPriorityNewWordIds = [
+    ...(Array.isArray(nextState.priorityNewWordIds)
+      ? nextState.priorityNewWordIds
+      : []),
+    ...customTodayNewWordIds,
+  ];
+  const priorityNewWordIds = rawPriorityNewWordIds.filter((wordId, index, list) => {
+    const word = wordsMap.get(wordId);
+    return word?.status === "new" && list.indexOf(wordId) === index;
+  });
+
+  nextState.priorityNewWordIds = priorityNewWordIds;
+
+  const recommendedIds = getRecommendedNewWords(
     words,
     settings.activeCategories,
   ).map((word) => word.id);
+  const availableIds = [
+    ...priorityNewWordIds,
+    ...recommendedIds.filter((wordId) => !priorityNewWordIds.includes(wordId)),
+  ];
 
   if (nextState.newWordsPausedToday) {
     nextState.assignedNewWordIds = [];
     return nextState;
   }
 
-  const assignedIds = (Array.isArray(nextState.assignedNewWordIds)
+  const currentAssignedIds = (Array.isArray(nextState.assignedNewWordIds)
     ? nextState.assignedNewWordIds
     : []
   ).filter((wordId) => availableIds.includes(wordId));
+  const assignedIds = [
+    ...priorityNewWordIds,
+    ...currentAssignedIds.filter(
+      (wordId) => !priorityNewWordIds.includes(wordId),
+    ),
+  ];
 
   const perDay =
     Number(settings.newWordsPerDay) || DEFAULT_SETTINGS.newWordsPerDay;
@@ -131,11 +200,14 @@ const isSameDailyState = (left, right) =>
   Number(left?.completedReviews || 0) === Number(right?.completedReviews || 0) &&
   JSON.stringify(left?.activityLog ?? []) ===
     JSON.stringify(right?.activityLog ?? []) &&
+  JSON.stringify(left?.priorityNewWordIds ?? []) ===
+    JSON.stringify(right?.priorityNewWordIds ?? []) &&
   JSON.stringify(left?.assignedNewWordIds ?? []) ===
     JSON.stringify(right?.assignedNewWordIds ?? []);
 
 function App() {
   const today = getTodayDateKey();
+  const auth = useSupabaseAuth();
 
   const [settings, setSettings] = useLocalStorage(
     STORAGE_KEYS.settings,
@@ -164,6 +236,10 @@ function App() {
   const [videoProgress, setVideoProgress] = useLocalStorage(
     STORAGE_KEYS.videoProgress,
     {},
+  );
+  const [writingPractice, setWritingPractice] = useLocalStorage(
+    STORAGE_KEYS.writingPractice,
+    createInitialWritingPractice,
   );
 
   const normalizedCustomWords = useMemo(
@@ -216,6 +292,12 @@ function App() {
         ? current
         : {},
     );
+    setWritingPractice((current) => {
+      const normalized = normalizeWritingPractice(current);
+      return JSON.stringify(current ?? {}) === JSON.stringify(normalized)
+        ? current
+        : normalized;
+    });
   }, [
     setCourseProgress,
     setCustomWords,
@@ -223,6 +305,7 @@ function App() {
     setSettings,
     setStoredWordsProgress,
     setVideoProgress,
+    setWritingPractice,
     normalizedCustomWords,
   ]);
 
@@ -256,12 +339,10 @@ function App() {
   const todayNewWords = useMemo(() => {
     const wordsMap = new Map(wordsProgress.map((word) => [word.id, word]));
 
-    return sortWordsForLearning(
-      normalizedDailyState.assignedNewWordIds
-        .map((wordId) => wordsMap.get(wordId))
-        .filter(Boolean)
-        .filter((word) => word.status === "new"),
-    );
+    return normalizedDailyState.assignedNewWordIds
+      .map((wordId) => wordsMap.get(wordId))
+      .filter(Boolean)
+      .filter((word) => word.status === "new");
   }, [normalizedDailyState.assignedNewWordIds, wordsProgress]);
 
   const stats = useMemo(
@@ -306,6 +387,31 @@ function App() {
     [normalizedSettings.activeCategories, wordsProgress],
   );
 
+  const normalizedWritingPractice = useMemo(
+    () => normalizeWritingPractice(writingPractice),
+    [writingPractice],
+  );
+
+  const writingQueueWords = useMemo(() => {
+    const hiddenIds = new Set(normalizedWritingPractice.hiddenWordIds);
+    const wordsMap = new Map(wordsProgress.map((word) => [word.id, word]));
+    const queueIds = [
+      ...normalizedWritingPractice.queueWordIds,
+      ...dueWords.map((word) => word.id),
+    ].filter((wordId, index, list) => list.indexOf(wordId) === index);
+
+    return queueIds
+      .map((wordId) => wordsMap.get(wordId))
+      .filter(Boolean)
+      .filter(
+        (word) =>
+          !hiddenIds.has(word.id) &&
+          normalizedWritingPractice.completedAtByWordId[word.id] !== today &&
+          word.status !== "learned" &&
+          word.status !== "backlog",
+      );
+  }, [dueWords, normalizedWritingPractice, today, wordsProgress]);
+
   const courseStats = useMemo(() => {
     const totalLessons = COURSE_LESSONS.length;
     const totalWeeks = new Set(COURSE_LESSONS.map((lesson) => lesson.week)).size;
@@ -332,6 +438,77 @@ function App() {
     };
   }, [courseProgress]);
 
+  const enqueueWritingWord = useCallback(
+    (wordId) => {
+      if (!wordId) {
+        return;
+      }
+
+      setWritingPractice((current) => {
+        const baseState = normalizeWritingPractice(current);
+
+        if (baseState.hiddenWordIds.includes(wordId)) {
+          return baseState;
+        }
+
+        return {
+          ...baseState,
+          queueWordIds: [
+            wordId,
+            ...baseState.queueWordIds.filter((id) => id !== wordId),
+          ],
+        };
+      });
+    },
+    [setWritingPractice],
+  );
+
+  const markWritingWordDone = (wordId, repetitions = 10) => {
+    if (!wordId) {
+      return;
+    }
+
+    setWritingPractice((current) => {
+      const baseState = normalizeWritingPractice(current);
+
+      return {
+        ...baseState,
+        queueWordIds: baseState.queueWordIds.filter((id) => id !== wordId),
+        completedWordIds: [
+          wordId,
+          ...baseState.completedWordIds.filter((id) => id !== wordId),
+        ],
+        completedAtByWordId: {
+          ...baseState.completedAtByWordId,
+          [wordId]: today,
+        },
+        repetitionsByWordId: {
+          ...baseState.repetitionsByWordId,
+          [wordId]: repetitions,
+        },
+      };
+    });
+  };
+
+  const hideWritingWord = (wordId) => {
+    if (!wordId) {
+      return;
+    }
+
+    setWritingPractice((current) => {
+      const baseState = normalizeWritingPractice(current);
+
+      return {
+        ...baseState,
+        queueWordIds: baseState.queueWordIds.filter((id) => id !== wordId),
+        hiddenWordIds: [
+          wordId,
+          ...baseState.hiddenWordIds.filter((id) => id !== wordId),
+        ],
+      };
+    });
+  };
+
   const handleWordAction = (wordId, actionType) => {
     const targetWord = wordsProgress.find((word) => word.id === wordId);
 
@@ -345,6 +522,9 @@ function App() {
       today,
     );
     const isNewWord = targetWord.status === "new";
+    const shouldQueueWriting =
+      ["know", "hard", "forgot"].includes(actionType) &&
+      updatedWord.status !== "learned";
       const activityPatch = {
         totalActions: 1,
         reviewActions: isNewWord ? 0 : 1,
@@ -360,6 +540,10 @@ function App() {
     setWordsProgress((currentWords) =>
       currentWords.map((word) => (word.id === wordId ? updatedWord : word)),
     );
+
+    if (shouldQueueWriting) {
+      enqueueWritingWord(wordId);
+    }
 
     setDailyState((currentState) => {
       const baseState = normalizeDailyState({
@@ -422,6 +606,67 @@ function App() {
     });
   };
 
+  const pinWordToTodayLearning = (wordId) => {
+    if (!wordId) {
+      return;
+    }
+
+    setDailyState((currentState) => {
+      const initialState = createInitialDailyState(today);
+      const baseState =
+        currentState?.date === today
+          ? {
+              ...initialState,
+              ...(currentState ?? {}),
+            }
+          : {
+              ...initialState,
+              activityLog: normalizeActivityLog(currentState?.activityLog),
+            };
+      const assignedNewWordIds = [
+        wordId,
+        ...(Array.isArray(baseState.assignedNewWordIds)
+          ? baseState.assignedNewWordIds.filter((id) => id !== wordId)
+          : []),
+      ];
+      const priorityNewWordIds = [
+        wordId,
+        ...(Array.isArray(baseState.priorityNewWordIds)
+          ? baseState.priorityNewWordIds.filter((id) => id !== wordId)
+          : []),
+      ];
+
+      return {
+        ...baseState,
+        date: today,
+        newWordsPausedToday: false,
+        assignedNewWordIds,
+        priorityNewWordIds,
+        newWordAssignmentVersion: NEW_WORD_ASSIGNMENT_VERSION,
+      };
+    });
+  };
+
+  const addWordToTodayLearning = (wordId) => {
+    if (!wordId) {
+      return;
+    }
+
+    setWordsProgress((currentWords) =>
+      currentWords.map((word) =>
+        word.id === wordId
+          ? {
+              ...word,
+              reviewStage: 0,
+              nextReviewDate: null,
+              status: "new",
+            }
+          : word,
+      ),
+    );
+    pinWordToTodayLearning(wordId);
+  };
+
   const addCustomWord = (payload) => {
     const nextWord = createCustomWord(payload);
 
@@ -439,6 +684,8 @@ function App() {
 
       return hasDuplicate ? normalized : [...normalized, nextWord];
     });
+
+    pinWordToTodayLearning(nextWord.id);
 
     return nextWord;
   };
@@ -476,6 +723,7 @@ function App() {
     setGrammarProgress({});
     setCourseProgress({});
     setVideoProgress({});
+    setWritingPractice(createInitialWritingPractice());
   };
 
   const exportAppData = () => ({
@@ -489,6 +737,7 @@ function App() {
     [STORAGE_KEYS.courseProgress]: courseProgress,
     [STORAGE_KEYS.customWords]: normalizedCustomWords,
     [STORAGE_KEYS.videoProgress]: videoProgress,
+    [STORAGE_KEYS.writingPractice]: normalizedWritingPractice,
   });
 
   const importAppData = (payload) => {
@@ -533,6 +782,9 @@ function App() {
       !Array.isArray(payload[STORAGE_KEYS.videoProgress])
         ? payload[STORAGE_KEYS.videoProgress]
         : {};
+    const nextWritingPractice = normalizeWritingPractice(
+      payload[STORAGE_KEYS.writingPractice] ?? normalizedWritingPractice,
+    );
 
     setSettings(nextSettings);
     setCustomWords(nextCustomWords);
@@ -541,6 +793,48 @@ function App() {
     setGrammarProgress(nextGrammarProgress);
     setCourseProgress(nextCourseProgress);
     setVideoProgress(nextVideoProgress);
+    setWritingPractice(nextWritingPractice);
+  };
+
+  const saveCloudState = async () => {
+    if (!supabase || !auth.user) {
+      throw new Error("Сначала войди в аккаунт.");
+    }
+
+    const { error } = await supabase.from("user_app_state").upsert({
+      user_id: auth.user.id,
+      payload: exportAppData(),
+    });
+
+    if (error) {
+      throw error;
+    }
+
+    return { savedAt: new Date().toISOString() };
+  };
+
+  const loadCloudState = async () => {
+    if (!supabase || !auth.user) {
+      throw new Error("Сначала войди в аккаунт.");
+    }
+
+    const { data, error } = await supabase
+      .from("user_app_state")
+      .select("payload, updated_at")
+      .eq("user_id", auth.user.id)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!data?.payload) {
+      throw new Error("В облаке пока нет сохранённого прогресса.");
+    }
+
+    importAppData(data.payload);
+
+    return { updatedAt: data.updated_at };
   };
 
   const selectCourseAnswer = (lessonId, exerciseIndex, selectedAnswer) => {
@@ -616,8 +910,10 @@ function App() {
   };
 
   const appContext = {
+    auth,
     checkCourseAnswer,
     checkGrammarAnswer,
+    addWordToTodayLearning,
     addCustomWord,
     courseLessons: COURSE_LESSONS,
     courseProgress,
@@ -632,11 +928,15 @@ function App() {
     grammarLessons: GRAMMAR_LESSONS,
     grammarProgress,
     handleWordAction,
+    hideWritingWord,
     importAppData,
+    markWritingWordDone,
     pauseNewWordsForToday,
     phraseOfDay,
     recordPracticeResult,
     resetProgress,
+    loadCloudState,
+    saveCloudState,
     toggleCourseSample,
     selectGrammarAnswer,
     settings: normalizedSettings,
@@ -646,6 +946,8 @@ function App() {
     updateCourseWriting,
     updateSettings,
     videoProgress,
+    writingPractice: normalizedWritingPractice,
+    writingQueueWords,
     weakWords,
     wordsProgress,
     markCourseLessonComplete,
@@ -660,6 +962,7 @@ function App() {
         <Route path="/learn" element={<Learn />} />
         <Route path="/review" element={<Review />} />
         <Route path="/practice" element={<Practice />} />
+        <Route path="/writing" element={<Navigate to="/practice?mode=writing" replace />} />
         <Route path="/videos" element={<Videos />} />
         <Route path="/add-word" element={<AddWord />} />
         <Route path="/dictionary" element={<Dictionary />} />
@@ -667,6 +970,7 @@ function App() {
         <Route path="/grammar" element={<Grammar />} />
         <Route path="/progress" element={<Progress />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="*" element={<Navigate to="/settings" replace />} />
       </Route>
     </Routes>
   );

@@ -55,6 +55,8 @@ const ReviewCard = ({ word, accent, onAction, studyDirection = "en-ru" }) => {
               <p className="transcription-text">{word.transcription}</p>
             </div>
 
+            <MnemonicPanel word={word} />
+
             <div className="detail-block">
               <strong>Пример:</strong>
               <p>{word.example}</p>
@@ -66,8 +68,6 @@ const ReviewCard = ({ word, accent, onAction, studyDirection = "en-ru" }) => {
               <p>{word.workExample}</p>
               <p className="muted">{word.workExampleTranslation}</p>
             </div>
-
-            <MnemonicPanel word={word} />
           </div>
 
           <div className="word-actions">
@@ -91,6 +91,13 @@ const ReviewCard = ({ word, accent, onAction, studyDirection = "en-ru" }) => {
               onClick={() => onAction(word.id, "forgot")}
             >
               Не помню
+            </button>
+            <button
+              type="button"
+              className="button button-light"
+              onClick={() => onAction(word.id, "mastered")}
+            >
+              Запомнил
             </button>
           </div>
         </>

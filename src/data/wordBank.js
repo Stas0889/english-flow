@@ -272,6 +272,7 @@ writer|писатель
 yellow|жёлтый
 yesterday|вчера
 young|молодой
+baker|пекарь
 `;
 
 export const WEBFLOW_SEED_TEXT = `
